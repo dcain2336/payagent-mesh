@@ -1,0 +1,27 @@
+# PayAgent Mesh — sample policy configuration.
+# Free-only: all data is local; no network calls, stdlib + PyYAML only.
+
+agents:
+  agent-office-01:
+    per_transaction_cap: 200
+    daily_budget: 500
+    allowlist:
+      - Staples
+      - Amazon
+      - Office Depot
+  agent-ops-02:
+    per_transaction_cap: 5000
+    daily_budget: 20000
+    # no allowlist -> any merchant allowed (subject to denylist)
+
+denylist:
+  - DarkWeb Market
+  - CryptoMixer
+  - Unlicensed Casino
+
+velocity:
+  max_requests: 5
+  window_minutes: 10
+
+anomaly:
+  std_multiplier: 3.0
