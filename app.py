@@ -86,10 +86,19 @@ def _demo_mode() -> bool:
 
 
 def _execute_payment(pay_request: dict) -> dict:
-    """Create + capture a PayPal order, record spend, audit the execution."""
+    """Create a PayPal order; capture when the sandbox allows it.
+
+    Sandbox Orders v2 requires payer approval before capture, so a fresh
+    order may legitimately come back capture-pending. Never 500 on that:
+    return the real order with capture=None and capture_pending=True.
+    """
     client = _client()
     order = client.create_order(pay_request)
-    capture = client.capture_order(order["order_id"])
+    capture = None
+    try:
+        capture = client.capture_order(order["order_id"])
+    except RuntimeError:
+        capture = None  # ORDER_NOT_APPROVED etc. — order is real, capture waits
     _policy().record_spend(pay_request["agent_id"], float(pay_request["amount"]))
     _audit().record(
         "payment_executed",
@@ -99,11 +108,13 @@ def _execute_payment(pay_request: dict) -> dict:
             "amount": pay_request["amount"],
             "currency": pay_request["currency"],
             "order_id": order["order_id"],
-            "capture_id": capture["capture_id"],
+            "capture_id": capture["capture_id"] if capture else None,
+            "capture_pending": capture is None,
             "demo": order.get("demo"),
         },
     )
-    return {"order": order, "capture": capture}
+    return {"order": order, "capture": capture,
+            "capture_pending": capture is None}
 
 
 def _run_pipeline(payload: dict) -> dict:
@@ -209,7 +220,8 @@ def api_decision(item_id: str):
                 "queue_id": item_id,
                 "amount": pay_request["amount"],
                 "order_id": paypal_result["order"]["order_id"],
-                "capture_id": paypal_result["capture"]["capture_id"],
+                "capture_id": (paypal_result["capture"] or {}).get("capture_id"),
+                "capture_pending": paypal_result.get("capture_pending", False),
             },
         )
         item["paypal_result"] = paypal_result
@@ -388,8 +400,11 @@ async function submitRequest() {
     renderDebate(d.debate);
     let html = "";
     if (d.paypal_result) {
-      html = "PAID — order <code>" + d.paypal_result.order.order_id + "</code>, " +
-             "capture <code>" + d.paypal_result.capture.capture_id + "</code>";
+      const o = d.paypal_result.order, c = d.paypal_result.capture;
+      html = "PAID — order <code>" + o.order_id + "</code>" +
+             (c ? ", capture <code>" + c.capture_id + "</code>"
+                : ", capture pending payer approval" +
+                  (o.approve_url ? " — <a href=\"" + o.approve_url + "\" target=\"_blank\" rel=\"noopener\">approve in PayPal sandbox →</a>" : ""));
     } else if (d.queue_id) {
       html = "QUEUED — item <code>" + d.queue_id + "</code>, awaiting human review";
     } else {
