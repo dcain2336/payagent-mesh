@@ -404,7 +404,7 @@ async function submitRequest() {
       html = "PAID — order <code>" + o.order_id + "</code>" +
              (c ? ", capture <code>" + c.capture_id + "</code>"
                 : ", capture pending payer approval" +
-                  (o.approve_url ? " — <a href=\"" + o.approve_url + "\" target=\"_blank\" rel=\"noopener\">approve in PayPal sandbox →</a>" : ""));
+                  (o.approve_url ? ' — <a href="' + o.approve_url + '" target="_blank" rel="noopener">approve in PayPal sandbox →</a>' : ""));
     } else if (d.queue_id) {
       html = "QUEUED — item <code>" + d.queue_id + "</code>, awaiting human review";
     } else {
