@@ -40,7 +40,7 @@ append-only **audit log**.
      +----------------+    +--------+--------+    +----------------+
      | PayPal Sandbox |    | Human Review    |    |   Rejected +     |
      | paypal_client  |    | Queue           |    |   audit entry    |
-     | create +       |    | queue.py        |    +----------------+
+     | create +       |    | review_queue.py |    +----------------+
      | capture order  |    | Approve / Reject|          |
      +----------------+    +-----------------+          |
               |                      |                    |
@@ -68,7 +68,8 @@ append-only **audit log**.
 ## Quickstart
 
 ```bash
-cd paypal-ai/build
+git clone https://github.com/dcain2336/payagent-mesh.git
+cd payagent-mesh
 pip install -r requirements.txt
 python app.py
 # open http://127.0.0.1:5057
@@ -98,9 +99,8 @@ money anywhere). Click a seeded scenario button and watch the council debate.
 ## Repo layout
 
 ```
-build/
 ├── app.py            # Flask demo app + self-contained UI (port 5057)
-├── queue.py          # Human review queue (JSON persistence)
+├── review_queue.py   # Human review queue (JSON persistence)
 ├── policy.py         # Policy engine: caps, denylist, budgets, risk score
 ├── audit.py          # Append-only JSONL audit log
 ├── council.py        # AI council debate (planner / risk / auditor)
